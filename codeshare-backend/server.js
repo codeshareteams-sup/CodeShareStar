@@ -433,6 +433,24 @@ io.on('connection', (socket) => {
   });
 });
 
+// ── Serve Frontend Static Assets (Unified Option 1) ─────────────────────────
+const frontendDistPath = path.join(__dirname, '../codeshare-frontend/dist');
+app.use(express.static(frontendDistPath));
+
+app.get('*', (req, res) => {
+  // Avoid intercepting API routes (if not defined, return 404 naturally)
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ error: 'API route not found' });
+  }
+
+  const indexPath = path.join(frontendDistPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).send('Frontend build folder not found. Run the build command first.');
+  }
+});
+
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
   console.log(`\n🚀 CodeShare backend running on port ${PORT}\n`);

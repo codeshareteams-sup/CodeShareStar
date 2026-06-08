@@ -1,6 +1,9 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 
-const BACKEND = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:4000'
+const BACKEND = import.meta.env.VITE_BACKEND_URL || 
+  (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://127.0.0.1:4000' 
+    : window.location.origin)
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {

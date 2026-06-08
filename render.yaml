@@ -1,16 +1,20 @@
-# Render Blueprint Specification
-# Deploy both the backend and frontend to Render with a single click.
+# Render Blueprint Specification (Unified Monolith Option 1)
+# Deploy the entire stack as a single service on Render with a single click.
 # Learn more at: https://render.com/docs/blueprints
 
 services:
-  # ── Backend Web Service ─────────────────────────────────────────────────────
+  # ── Unified Backend & Frontend Web Service ──────────────────────────────────
   - type: web
     name: codeshare-backend
     env: node
     plan: free
     rootDir: codeshare-backend
-    buildCommand: npm install
-    startCommand: node server.js
+    
+    # Builds the frontend React app and then installs backend node dependencies
+    buildCommand: "cd ../codeshare-frontend && npm install && npm run build && cd ../codeshare-backend && npm install"
+    
+    startCommand: "node server.js"
+    
     envVars:
       - key: SUPABASE_URL
         sync: false
@@ -30,18 +34,3 @@ services:
 
       - key: PORT
         value: 10000
-
-  # ── Frontend Static Site ────────────────────────────────────────────────────
-  - type: web
-    name: codeshare-frontend
-    env: static
-    plan: free
-    rootDir: codeshare-frontend
-    buildCommand: npm install && npm run build
-    publishDir: dist
-    envVars:
-      - key: VITE_BACKEND_URL
-        fromService:
-          name: codeshare-backend
-          type: web
-          property: url
