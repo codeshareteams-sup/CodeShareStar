@@ -4,7 +4,7 @@ const supabaseUrl = process.env.SUPABASE_URL && process.env.SUPABASE_URL.startsW
   ? process.env.SUPABASE_URL 
   : 'https://placeholder.supabase.co';
   
-const supabaseKey = process.env.SUPABASE_ANON_KEY || 'placeholder_key';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'placeholder_key';
 
 const isPlaceholder = supabaseUrl === 'https://placeholder.supabase.co';
 
@@ -23,7 +23,12 @@ class MockQuery {
     this.isSingle = false;
     this.payload = null;
   }
-  select() { this.op = 'select'; return this; }
+  select() { 
+    if (this.op !== 'insert' && this.op !== 'update') {
+      this.op = 'select'; 
+    }
+    return this; 
+  }
   insert(data) { this.op = 'insert'; this.payload = data; return this; }
   update(data) { this.op = 'update'; this.payload = data; return this; }
   eq(col, val) { this.filters.push({ col, val }); return this; }
@@ -33,8 +38,16 @@ class MockQuery {
     let result = [...this.tableData];
     
     if (this.op === 'insert') {
-      this.tableData.push(this.payload);
-      result = [this.payload];
+      const crypto = require('crypto');
+      const records = Array.isArray(this.payload) ? this.payload : [this.payload];
+      const inserted = records.map(r => ({
+        id: r.id || crypto.randomUUID(),
+        created_at: r.created_at || new Date().toISOString(),
+        codeshare_count: r.codeshare_count || 0,
+        ...r
+      }));
+      this.tableData.push(...inserted);
+      result = inserted;
     } else {
       this.filters.forEach(f => {
         result = result.filter(item => item[f.col] === f.val);
