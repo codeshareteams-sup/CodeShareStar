@@ -1,0 +1,296 @@
+.workspace-container {
+  display: flex;
+  height: 100%;
+  background: #1e1f22;
+  color: #dbdee1;
+  border-right: 1px solid #2b2d31;
+}
+
+/* ── Workspace Icons Bar ── */
+.workspace-icons-bar {
+  width: 72px;
+  background: #111214;
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.ws-icon-btn, .ws-action-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #313338;
+  color: #dbdee1;
+  border: none;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ws-icon-btn:hover, .ws-icon-btn.active {
+  border-radius: 16px;
+  background: #5865f2;
+  color: #ffffff;
+}
+
+.ws-action-btn.add-btn:hover {
+  border-radius: 16px;
+  background: #23a55a;
+  color: #ffffff;
+}
+
+.ws-action-btn.join-btn:hover {
+  border-radius: 16px;
+  background: #f0b232;
+  color: #ffffff;
+}
+
+/* ── Workspace Sidebar ── */
+.workspace-sidebar {
+  width: 200px;
+  background: #2b2d31;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #1f2023;
+}
+
+.ws-header {
+  height: 48px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #1f2023;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.ws-header h3 {
+  font-size: 14px;
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+  color: #f2f3f5;
+}
+
+.ws-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 8px;
+  overflow-y: auto;
+}
+
+.section-title {
+  font-size: 11px;
+  font-weight: bold;
+  color: #949ba4;
+  margin-bottom: 8px;
+  padding-left: 8px;
+  letter-spacing: 0.5px;
+}
+
+.channel-list, .member-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.channel-btn {
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: #949ba4;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: all 0.15s ease;
+}
+
+.channel-btn:hover {
+  background: #35373c;
+  color: #dbdee1;
+}
+
+.channel-btn.active {
+  background: #404249;
+  color: #ffffff;
+}
+
+.create-room-btn {
+  background: transparent;
+  border: 1px dashed #4e5058;
+  color: #949ba4;
+  padding: 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: all 0.15s ease;
+}
+
+.create-room-btn:hover {
+  border-color: #949ba4;
+  color: #dbdee1;
+}
+
+/* ── Member List ── */
+.member-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  font-size: 13px;
+  color: #949ba4;
+}
+
+.member-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.member-status-dot.online {
+  background: #23a55a;
+}
+
+.member-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+}
+
+.owner-badge {
+  font-size: 9px;
+  background: #3f4147;
+  color: #f0b232;
+  padding: 1px 4px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.ws-id-share {
+  margin-top: auto;
+  padding: 8px;
+  background: #1e1f22;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ws-id-label {
+  font-size: 10px;
+  color: #949ba4;
+}
+
+.ws-id-code {
+  font-size: 11px;
+  color: #5865f2;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.ws-id-code:hover {
+  text-decoration: underline;
+}
+
+.no-ws-fallback {
+  padding: 24px 16px;
+  text-align: center;
+  color: #949ba4;
+  font-size: 12px;
+}
+
+/* ── Modal Styles ── */
+.ws-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.ws-modal {
+  background: #313338;
+  border-radius: 8px;
+  padding: 24px;
+  width: 340px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.ws-modal h4 {
+  margin: 0 0 16px 0;
+  color: #ffffff;
+  font-size: 16px;
+}
+
+.ws-modal input {
+  width: 100%;
+  padding: 10px;
+  background: #1e1f22;
+  border: 1px solid #111214;
+  border-radius: 4px;
+  color: #ffffff;
+  margin-bottom: 16px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.ws-modal input:focus {
+  outline: none;
+  border-color: #5865f2;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.btn-cancel, .btn-confirm {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-cancel {
+  background: transparent;
+  color: #ffffff;
+}
+
+.btn-cancel:hover {
+  text-decoration: underline;
+}
+
+.btn-confirm {
+  background: #5865f2;
+  color: #ffffff;
+}
+
+.btn-confirm:hover {
+  background: #4752c4;
+}

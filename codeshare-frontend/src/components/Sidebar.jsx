@@ -1,6 +1,6 @@
 import './Sidebar.css'
 
-export default function Sidebar({ users, roomId, onCopyLink, copied, onRun, running, canExecute, language }) {
+export default function Sidebar({ users, roomId, onCopyLink, copied, onRun, running, canExecute, language, onSelectUser }) {
   const roomUrl = `${window.location.origin}/room/${roomId}`
 
   return (
@@ -71,7 +71,13 @@ export default function Sidebar({ users, roomId, onCopyLink, copied, onRun, runn
             <p className="no-users">No users connected</p>
           ) : (
             users.map((u, i) => (
-              <div key={i} className="user-item">
+              <div 
+                key={i} 
+                className="user-item clickable" 
+                onClick={() => onSelectUser && onSelectUser(u)}
+                style={{ cursor: onSelectUser ? 'pointer' : 'default' }}
+                title={onSelectUser ? `Click to start P2P Private Chat with ${u.name}` : ''}
+              >
                 <div className="user-avatar" style={{ background: u.color }}>
                   {u.name.charAt(0).toUpperCase()}
                 </div>

@@ -181,6 +181,14 @@
   transition: background var(--transition);
 }
 .user-item:hover { background: var(--bg-600); }
+.user-item.clickable {
+  transition: all 0.2s ease;
+}
+.user-item.clickable:hover {
+  background: var(--accent-dim);
+  border-color: var(--accent-light);
+  transform: translateX(3px);
+}
 
 .user-avatar {
   width: 28px; height: 28px;

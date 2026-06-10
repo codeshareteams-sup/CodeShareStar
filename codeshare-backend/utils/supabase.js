@@ -31,7 +31,9 @@ class MockQuery {
   }
   insert(data) { this.op = 'insert'; this.payload = data; return this; }
   update(data) { this.op = 'update'; this.payload = data; return this; }
+  delete() { this.op = 'delete'; return this; }
   eq(col, val) { this.filters.push({ col, val }); return this; }
+  in(col, valArray) { this.filters.push({ col, valArray, isList: true }); return this; }
   single() { this.isSingle = true; return this; }
   
   then(resolve) {
@@ -50,10 +52,21 @@ class MockQuery {
       result = inserted;
     } else {
       this.filters.forEach(f => {
-        result = result.filter(item => item[f.col] === f.val);
+        if (f.isList) {
+          result = result.filter(item => (f.valArray || []).includes(item[f.col]));
+        } else {
+          result = result.filter(item => item[f.col] === f.val);
+        }
       });
       if (this.op === 'update') {
         result.forEach(item => Object.assign(item, this.payload));
+      } else if (this.op === 'delete') {
+        result.forEach(item => {
+          const idx = this.tableData.indexOf(item);
+          if (idx !== -1) {
+            this.tableData.splice(idx, 1);
+          }
+        });
       }
     }
     

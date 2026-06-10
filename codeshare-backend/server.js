@@ -4,10 +4,13 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const { nanoid } = require('nanoid');
+const path = require('path');
 const supabase = require('./utils/supabase');
 
 // ── Routes & Middleware ───────────────────────────────────────────────────────
 const authRouter = require('./routes/auth');
+const workspacesRouter = require('./routes/workspaces');
+const filesRouter = require('./routes/files');
 const { optionalToken, checkPlanLimits, PLAN_LIMITS } = require('./middleware/auth');
 
 const app = express();
@@ -28,13 +31,15 @@ async function checkSupabase() {
 
 checkSupabase();
 
-// ── Auth routes ───────────────────────────────────────────────────────────────
+// ── Auth, Workspaces and Files routes ─────────────────────────────────────────
 app.use('/api/auth', authRouter);
+app.use('/api/workspaces', workspacesRouter);
+app.use('/api/rooms', filesRouter); // Handles GET /api/rooms/:roomId/files and POST /api/rooms/:roomId/files
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 // ── Code Execution (Local child_process) ─────────────────────────────────────
 const { spawn } = require('child_process');
 const os = require('os');
-const path = require('path');
 const fs = require('fs');
 
 const NON_EXECUTABLE = ['html', 'css', 'sql', 'json', 'markdown'];
@@ -212,6 +217,7 @@ async function getRoom(roomId) {
         viewOnlyMode: dbRoom.view_only_mode,
         ownerToken: dbRoom.owner_token,
         ownerId: dbRoom.owner_id,
+        workspaceId: dbRoom.workspace_id,
       };
     } else {
       // Default fallback if not in DB yet (e.g. just created)
@@ -284,6 +290,7 @@ app.get('/api/rooms/:roomId', async (req, res) => {
       userCount: Object.keys(room.users).length,
       language: room.language,
       viewOnlyMode: room.viewOnlyMode,
+      workspaceId: room.workspaceId || null
     });
   } else {
     res.json({ exists: false });
@@ -340,7 +347,7 @@ io.on('connection', (socket) => {
     const colorIndex = currentCount % USER_COLORS.length;
     const color = USER_COLORS[colorIndex];
 
-    room.users[socket.id] = { name: username || 'Anonymous', color, plan };
+    room.users[socket.id] = { socketId: socket.id, name: username || 'Anonymous', color, plan };
     socket.join(roomId);
     socket.roomId = roomId;
     socket.userPlan = plan;
@@ -351,6 +358,7 @@ io.on('connection', (socket) => {
       language: room.language,
       viewOnlyMode: room.viewOnlyMode,
       isOwner,
+      workspaceId: room.workspaceId || null
     });
 
     const userList = Object.values(room.users);
@@ -397,12 +405,88 @@ io.on('connection', (socket) => {
       name: sender.name,
       color: sender.color,
       text: message,
+      readBy: [socket.id],
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
     room.chat.push(msg);
     if (room.chat.length > 100) room.chat.shift();
     io.to(roomId).emit('chat-message', msg);
+  });
+
+  // ── Monaco Presence/Cursor Sync ───────────────────────────────────────────
+  socket.on('cursor-move', ({ roomId, position }) => {
+    if (!rooms[roomId]) return;
+    socket.to(roomId).emit('cursor-update', {
+      socketId: socket.id,
+      position,
+      name: rooms[roomId].users[socket.id]?.name || 'Collaborator',
+      color: rooms[roomId].users[socket.id]?.color || '#ffffff'
+    });
+  });
+
+  // ── Typing Indicators ──────────────────────────────────────────────────────
+  socket.on('typing-start', ({ roomId }) => {
+    if (!rooms[roomId]) return;
+    socket.to(roomId).emit('typing-update', {
+      socketId: socket.id,
+      username: rooms[roomId].users[socket.id]?.name || 'Someone',
+      isTyping: true
+    });
+  });
+
+  socket.on('typing-stop', ({ roomId }) => {
+    if (!rooms[roomId]) return;
+    socket.to(roomId).emit('typing-update', {
+      socketId: socket.id,
+      username: rooms[roomId].users[socket.id]?.name || 'Someone',
+      isTyping: false
+    });
+  });
+
+  // ── Read Receipts ──────────────────────────────────────────────────────────
+  socket.on('message-read', ({ roomId, messageId, userId }) => {
+    if (!rooms[roomId]) return;
+    const room = rooms[roomId];
+    const msg = room.chat.find(m => m.id === messageId);
+    if (msg) {
+      if (!msg.readBy) msg.readBy = [];
+      if (!msg.readBy.includes(userId)) {
+        msg.readBy.push(userId);
+      }
+    }
+    io.to(roomId).emit('message-read-update', { messageId, userId });
+  });
+
+  // ── File Upload Sync ───────────────────────────────────────────────────────
+  socket.on('file-shared', ({ roomId, file }) => {
+    socket.to(roomId).emit('file-shared', file);
+  });
+
+  socket.on('file-deleted', ({ roomId, fileId }) => {
+    socket.to(roomId).emit('file-deleted', { fileId });
+  });
+
+  // ── WebRTC P2P Signaling ───────────────────────────────────────────────────
+  socket.on('webrtc-offer', ({ targetSocketId, offer }) => {
+    io.to(targetSocketId).emit('webrtc-offer', {
+      senderSocketId: socket.id,
+      offer
+    });
+  });
+
+  socket.on('webrtc-answer', ({ targetSocketId, answer }) => {
+    io.to(targetSocketId).emit('webrtc-answer', {
+      senderSocketId: socket.id,
+      answer
+    });
+  });
+
+  socket.on('webrtc-ice-candidate', ({ targetSocketId, candidate }) => {
+    io.to(targetSocketId).emit('webrtc-ice-candidate', {
+      senderSocketId: socket.id,
+      candidate
+    });
   });
 
   socket.on('disconnect', () => {
