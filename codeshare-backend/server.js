@@ -218,6 +218,10 @@ async function getRoom(roomId) {
         ownerToken: dbRoom.owner_token,
         ownerId: dbRoom.owner_id,
         workspaceId: dbRoom.workspace_id,
+        cards: [
+          { id: 'editor-main', type: 'code', title: 'Main Editor', x: 150, y: 100, w: 750, h: 500 },
+          { id: 'chat-main', type: 'chat', title: 'Live Chat', x: 930, y: 100, w: 360, h: 500 }
+        ]
       };
     } else {
       // Default fallback if not in DB yet (e.g. just created)
@@ -227,6 +231,10 @@ async function getRoom(roomId) {
         users: {},
         chat: [],
         viewOnlyMode: false,
+        cards: [
+          { id: 'editor-main', type: 'code', title: 'Main Editor', x: 150, y: 100, w: 750, h: 500 },
+          { id: 'chat-main', type: 'chat', title: 'Live Chat', x: 930, y: 100, w: 360, h: 500 }
+        ]
       };
     }
   }
@@ -262,7 +270,11 @@ app.post('/api/rooms', optionalToken, checkPlanLimits, async (req, res) => {
     chat: [],
     viewOnlyMode: false,
     ownerToken,
-    ownerId
+    ownerId,
+    cards: [
+      { id: 'editor-main', type: 'code', title: 'Main Editor', x: 150, y: 100, w: 750, h: 500 },
+      { id: 'chat-main', type: 'chat', title: 'Live Chat', x: 930, y: 100, w: 360, h: 500 }
+    ]
   };
 
   // 3. Increment user's codeshare count if logged in
@@ -358,7 +370,8 @@ io.on('connection', (socket) => {
       language: room.language,
       viewOnlyMode: room.viewOnlyMode,
       isOwner,
-      workspaceId: room.workspaceId || null
+      workspaceId: room.workspaceId || null,
+      cards: room.cards || []
     });
 
     const userList = Object.values(room.users);
@@ -465,6 +478,42 @@ io.on('connection', (socket) => {
 
   socket.on('file-deleted', ({ roomId, fileId }) => {
     socket.to(roomId).emit('file-deleted', { fileId });
+  });
+
+  // ── Canvas Card Sync ──────────────────────────────────────────────────────
+  socket.on('card-update', ({ roomId, cardId, x, y, w, h }) => {
+    if (!rooms[roomId]) return;
+    const room = rooms[roomId];
+    if (!room.cards) room.cards = [];
+    const card = room.cards.find(c => c.id === cardId);
+    if (card) {
+      card.x = x;
+      card.y = y;
+      if (w !== undefined) card.w = w;
+      if (h !== undefined) card.h = h;
+    } else {
+      room.cards.push({ id: cardId, x, y, w, h });
+    }
+    socket.to(roomId).emit('card-update', { cardId, x, y, w, h });
+  });
+
+  socket.on('card-create', ({ roomId, card }) => {
+    if (!rooms[roomId]) return;
+    const room = rooms[roomId];
+    if (!room.cards) room.cards = [];
+    if (!room.cards.some(c => c.id === card.id)) {
+      room.cards.push(card);
+    }
+    socket.to(roomId).emit('card-create', { card });
+  });
+
+  socket.on('card-delete', ({ roomId, cardId }) => {
+    if (!rooms[roomId]) return;
+    const room = rooms[roomId];
+    if (room.cards) {
+      room.cards = room.cards.filter(c => c.id !== cardId);
+    }
+    socket.to(roomId).emit('card-delete', { cardId });
   });
 
   // ── WebRTC P2P Signaling ───────────────────────────────────────────────────

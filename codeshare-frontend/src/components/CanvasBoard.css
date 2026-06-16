@@ -1,0 +1,371 @@
+/* ── INFINITE CANVAS CONTAINER ───────────────────────────────────────────── */
+.canvas-board-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #0d0e12;
+  user-select: none;
+  cursor: grab;
+  outline: none;
+}
+.canvas-board-container:active {
+  cursor: grabbing;
+}
+
+/* Dotted Grid Background */
+.canvas-grid-layer {
+  position: absolute;
+  top: -10000px;
+  left: -10000px;
+  width: 20000px;
+  height: 20000px;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1.5px, transparent 1.5px);
+  background-size: 28px 28px;
+  transform-origin: center;
+  pointer-events: none;
+}
+
+/* Inner board layer holding cards */
+.canvas-board-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0; /* Scaling relative to top-left */
+}
+
+/* ── CANVAS CARD STYLING ─────────────────────────────────────────────────── */
+.canvas-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  background: rgba(18, 20, 27, 0.75);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 
+              inset 0 1px 1px rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  pointer-events: auto; /* Allow clicks on card */
+}
+
+.canvas-card:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), 
+              0 0 12px rgba(59, 130, 246, 0.1);
+}
+
+/* Card Header */
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(25, 28, 38, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: move;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-type-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #9ca3af;
+}
+.card-type-code .card-type-dot { background-color: #3b82f6; }
+.card-type-chat .card-type-dot { background-color: #10b981; }
+.card-type-screenshot .card-type-dot { background-color: #a855f7; }
+
+.card-title-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e5e7eb;
+  letter-spacing: 0.02em;
+}
+
+.card-close-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.card-close-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+/* Card Body */
+.card-body {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Card Resize Handle */
+.card-resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 14px;
+  height: 14px;
+  cursor: se-resize;
+  z-index: 10;
+  background: linear-gradient(135deg, transparent 50%, rgba(255, 255, 255, 0.15) 50%);
+  border-bottom-right-radius: 12px;
+}
+.canvas-card:hover .card-resize-handle {
+  background: linear-gradient(135deg, transparent 50%, rgba(59, 130, 246, 0.5) 50%);
+}
+
+/* ── FLOATING CANVAS TOOLBAR ─────────────────────────────────────────────── */
+.canvas-toolbar {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(20, 22, 30, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 
+              inset 0 1px 1px rgba(255, 255, 255, 0.05);
+  z-index: 50;
+  pointer-events: auto;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toolbar-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.toolbar-btn.btn-primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+.toolbar-btn.btn-primary:hover {
+  background: linear-gradient(135deg, #60a5fa, #2563eb);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+  transform: translateY(-1px);
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0 4px;
+}
+
+/* ── HUD MINIMAP ─────────────────────────────────────────────────────────── */
+.canvas-minimap {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  width: 180px;
+  height: 120px;
+  background: rgba(15, 17, 23, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  z-index: 45;
+  pointer-events: auto;
+}
+
+.minimap-header {
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #6b7280;
+  letter-spacing: 0.08em;
+}
+
+.minimap-viewport {
+  position: relative;
+  width: 100%;
+  height: calc(100% - 20px);
+}
+
+.minimap-card-rect {
+  position: absolute;
+  background: rgba(59, 130, 246, 0.35);
+  border: 1px solid rgba(59, 130, 246, 0.8);
+  border-radius: 2px;
+}
+.minimap-card-rect.type-chat {
+  background: rgba(16, 185, 129, 0.3);
+  border-color: rgba(16, 185, 129, 0.8);
+}
+.minimap-card-rect.type-screenshot {
+  background: rgba(168, 85, 247, 0.3);
+  border-color: rgba(168, 85, 247, 0.8);
+}
+
+.minimap-camera-rect {
+  position: absolute;
+  border: 1.5px solid #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+  border-radius: 4px;
+}
+
+/* ── HUD ZOOM BADGE ──────────────────────────────────────────────────────── */
+.canvas-zoom-hud {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  padding: 6px 12px;
+  background: rgba(20, 22, 30, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: monospace;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 45;
+}
+
+/* ── CANVAS SCREENSHOT CARD SPECIFIC OVERLAYS ────────────────────────────── */
+.screenshot-card-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #111216;
+}
+
+.screenshot-card-img-container {
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #090a0d;
+  position: relative;
+  cursor: pointer;
+}
+
+.screenshot-card-img-container img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 0.25s ease;
+}
+.screenshot-card-img-container:hover img {
+  transform: scale(1.03);
+}
+
+.screenshot-card-hover-icon {
+  position: absolute;
+  opacity: 0;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  padding: 8px;
+  border-radius: 50%;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.screenshot-card-img-container:hover .screenshot-card-hover-icon {
+  opacity: 1;
+}
+
+.screenshot-card-footer {
+  padding: 8px 12px;
+  background: rgba(20, 22, 30, 0.8);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.screenshot-card-caption {
+  font-size: 11.5px;
+  color: #d1d5db;
+  font-style: italic;
+  margin: 0;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.screenshot-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.screenshot-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.screenshot-card-actions a, 
+.screenshot-card-actions button {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.screenshot-card-actions a:hover { color: #3b82f6; }
+.screenshot-card-actions button.btn-delete:hover { color: #ef4444; }
