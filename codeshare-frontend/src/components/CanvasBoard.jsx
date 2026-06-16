@@ -98,41 +98,7 @@ export default function CanvasBoard({
     setScale(0.85)
   }
 
-  // Calculate coordinates mapping for rendering minimap HUD rectangles
-  const getMinimapRects = () => {
-    if (!containerRef.current || cards.length === 0) return []
-    const clientW = containerRef.current.clientWidth
-    const clientH = containerRef.current.clientHeight
 
-    const elements = [
-      { id: 'camera', type: 'camera', x: -panX / scale, y: -panY / scale, w: clientW / scale, h: clientH / scale },
-      ...cards.map(c => ({ id: c.id, type: c.type, x: c.x, y: c.y, w: c.w, h: c.h }))
-    ]
-
-    const padding = 200
-    const minX = Math.min(...elements.map(el => el.x)) - padding
-    const maxX = Math.max(...elements.map(el => el.x + el.w)) + padding
-    const minY = Math.min(...elements.map(el => el.y)) - padding
-    const maxY = Math.max(...elements.map(el => el.y + el.h)) + padding
-
-    const boundsW = maxX - minX
-    const boundsH = maxY - minY
-
-    const mapMaxW = 180
-    const mapMaxH = 100
-    const mapScale = Math.min(mapMaxW / boundsW, mapMaxH / boundsH)
-
-    return elements.map(el => ({
-      id: el.id,
-      type: el.type,
-      left: (el.x - minX) * mapScale,
-      top: (el.y - minY) * mapScale,
-      width: el.w * mapScale,
-      height: el.h * mapScale
-    }))
-  };
-
-  const minimapRects = getMinimapRects()
 
   return (
     <div
@@ -180,26 +146,7 @@ export default function CanvasBoard({
         {Math.round(scale * 100)}%
       </div>
 
-      {/* HUD: NAVIGATION MINIMAP */}
-      {cards.length > 0 && (
-        <div className="canvas-minimap">
-          <div className="minimap-header">Navigation Minimap</div>
-          <div className="minimap-viewport">
-            {minimapRects.map(r => (
-              <div
-                key={r.id}
-                className={r.type === 'camera' ? 'minimap-camera-rect' : `minimap-card-rect type-${r.type}`}
-                style={{
-                  left: `${r.left}px`,
-                  top: `${r.top}px`,
-                  width: `${r.width}px`,
-                  height: `${r.height}px`
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+
 
       {/* HUD: FLOATING ACTIONS TOOLBAR */}
       <div className="canvas-toolbar">

@@ -198,61 +198,7 @@
   margin: 0 4px;
 }
 
-/* ── HUD MINIMAP ─────────────────────────────────────────────────────────── */
-.canvas-minimap {
-  position: absolute;
-  bottom: 24px;
-  right: 24px;
-  width: 180px;
-  height: 120px;
-  background: rgba(15, 17, 23, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  overflow: hidden;
-  z-index: 45;
-  pointer-events: auto;
-}
 
-.minimap-header {
-  padding: 4px 8px;
-  background: rgba(255, 255, 255, 0.02);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  font-size: 9px;
-  font-weight: 800;
-  text-transform: uppercase;
-  color: #6b7280;
-  letter-spacing: 0.08em;
-}
-
-.minimap-viewport {
-  position: relative;
-  width: 100%;
-  height: calc(100% - 20px);
-}
-
-.minimap-card-rect {
-  position: absolute;
-  background: rgba(59, 130, 246, 0.35);
-  border: 1px solid rgba(59, 130, 246, 0.8);
-  border-radius: 2px;
-}
-.minimap-card-rect.type-chat {
-  background: rgba(16, 185, 129, 0.3);
-  border-color: rgba(16, 185, 129, 0.8);
-}
-.minimap-card-rect.type-screenshot {
-  background: rgba(168, 85, 247, 0.3);
-  border-color: rgba(168, 85, 247, 0.8);
-}
-
-.minimap-camera-rect {
-  position: absolute;
-  border: 1.5px solid #ef4444;
-  background: rgba(239, 68, 68, 0.05);
-  border-radius: 4px;
-}
 
 /* ── HUD ZOOM BADGE ──────────────────────────────────────────────────────── */
 .canvas-zoom-hud {
