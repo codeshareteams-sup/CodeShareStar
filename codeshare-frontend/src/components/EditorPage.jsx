@@ -5,7 +5,6 @@ import Editor from '@monaco-editor/react'
 import Sidebar from './Sidebar'
 import ChatPanel from './ChatPanel'
 import WorkspaceSidebar from './WorkspaceSidebar'
-import CanvasBoard from './CanvasBoard'
 import { useAuth, BACKEND_URL } from '../context/AuthContext'
 import DEFAULT_SAMPLES from './defaultSamples'
 import './EditorPage.css'
@@ -83,10 +82,6 @@ export default function EditorPage() {
   const [workspaceId, setWorkspaceId] = useState(null)
   const [workspaceRole, setWorkspaceRole] = useState('member')
   const [triggerUpload, setTriggerUpload] = useState(false)
-  const [cards, setCards] = useState([
-    { id: 'editor-main', type: 'code', title: 'Main Editor', x: 150, y: 100, w: 750, h: 500 },
-    { id: 'chat-main', type: 'chat', title: 'Live Chat', x: 930, y: 100, w: 360, h: 500 }
-  ])
 
   const isLocalTyping = useRef(false)
   const typingTimeout = useRef(null)
@@ -325,28 +320,7 @@ export default function EditorPage() {
 
     socket.on('file-deleted', ({ fileId }) => {
       setSharedFiles(prev => prev.filter(f => f.id !== fileId))
-      setCards(prev => prev.filter(c => c.id !== `screenshot-${fileId}`))
       pushNotif('A screenshot was deleted from the gallery.', 'info')
-    })
-
-    socket.on('card-update', ({ cardId, x, y, w, h }) => {
-      setCards(prev => prev.map(c => {
-        if (c.id === cardId) {
-          return { ...c, x, y, w: w !== undefined ? w : c.w, h: h !== undefined ? h : c.h }
-        }
-        return c
-      }))
-    })
-
-    socket.on('card-create', ({ card }) => {
-      setCards(prev => {
-        if (prev.some(c => c.id === card.id)) return prev
-        return [...prev, card]
-      })
-    })
-
-    socket.on('card-delete', ({ cardId }) => {
-      setCards(prev => prev.filter(c => c.id !== cardId))
     })
 
     socket.on('message-read-update', ({ messageId, userId }) => {
@@ -485,27 +459,6 @@ export default function EditorPage() {
       if (res.ok) {
         const data = await res.json()
         setSharedFiles(data)
-        
-        // Spawn screenshot cards dynamically for all loaded shared files
-        setCards(prev => {
-          let updated = [...prev]
-          data.forEach((file, index) => {
-            const cardId = `screenshot-${file.id}`
-            if (!updated.some(c => c.id === cardId)) {
-              updated.push({
-                id: cardId,
-                type: 'screenshot',
-                title: file.file_name,
-                file: file,
-                x: 350 + (index % 4) * 80,
-                y: 400 + Math.floor(index / 4) * 80,
-                w: 380,
-                h: 340
-              })
-            }
-          })
-          return updated
-        })
       }
     } catch (err) {
       console.error('Failed to load shared files:', err)
@@ -562,23 +515,6 @@ export default function EditorPage() {
             pushNotif('Screenshot shared to gallery!', 'info')
             socketRef.current?.emit('file-shared', { roomId, file: data })
             
-            // Auto-spawn a screenshot card in the workspace canvas
-            const cardId = `screenshot-${data.id}`
-            const screenshotCard = {
-              id: cardId,
-              type: 'screenshot',
-              title: data.file_name,
-              file: data,
-              x: 400 + Math.random() * 100,
-              y: 200 + Math.random() * 100,
-              w: 380,
-              h: 340
-            }
-            setCards(prev => {
-              if (prev.some(c => c.id === cardId)) return prev
-              return [...prev, screenshotCard]
-            })
-            socketRef.current?.emit('card-create', { roomId, card: screenshotCard })
             resolve(data)
           } catch {
             reject(new Error('Invalid response format'))
@@ -619,7 +555,6 @@ export default function EditorPage() {
       const data = await res.json()
       if (res.ok) {
         setSharedFiles(prev => prev.filter(f => f.id !== fileId))
-        setCards(prev => prev.filter(c => c.id !== `screenshot-${fileId}`))
         pushNotif('Screenshot deleted', 'info')
         socketRef.current?.emit('file-deleted', { roomId, fileId })
       } else {
@@ -628,59 +563,6 @@ export default function EditorPage() {
     } catch (err) {
       console.error(err)
       pushNotif('Delete failed', 'error')
-    }
-  }
-
-  // ── Canvas Cards Interaction Helpers ──
-  const handleUpdateCard = (cardId, updates) => {
-    setCards(prev => prev.map(c => {
-      if (c.id === cardId) {
-        const updated = { ...c, ...updates }
-        socketRef.current?.emit('card-update', {
-          roomId,
-          cardId,
-          x: updated.x,
-          y: updated.y,
-          w: updated.w,
-          h: updated.h
-        })
-        return updated
-      }
-      return c
-    }))
-  }
-
-  const handleDeleteCard = (cardId) => {
-    if (cardId === 'editor-main' || cardId === 'chat-main') {
-      pushNotif('Default core cards cannot be deleted.', 'info')
-      return
-    }
-    setCards(prev => prev.filter(c => c.id !== cardId))
-    socketRef.current?.emit('card-delete', { roomId, cardId })
-  }
-
-  const handleAddCodeCard = () => {
-    const id = `editor-${Date.now()}`
-    const newCard = {
-      id,
-      type: 'code',
-      title: `Editor Helper ${cards.filter(c => c.type === 'code').length}`,
-      x: 200 + Math.random() * 80,
-      y: 150 + Math.random() * 80,
-      w: 600,
-      h: 400
-    }
-    setCards(prev => [...prev, newCard])
-    socketRef.current?.emit('card-create', { roomId, card: newCard })
-  }
-
-  const handleOpenChatCard = () => {
-    if (!cards.some(c => c.id === 'chat-main')) {
-      const chatCard = { id: 'chat-main', type: 'chat', title: 'Live Chat', x: 930, y: 100, w: 360, h: 500 }
-      setCards(prev => [...prev, chatCard])
-      socketRef.current?.emit('card-create', { roomId, card: chatCard })
-    } else {
-      pushNotif('Chat card is already active on the canvas.', 'info')
     }
   }
 
@@ -999,123 +881,38 @@ export default function EditorPage() {
 
         <div className="editor-and-output">
           <main className="editor-main" style={{ position: 'relative' }}>
-            <CanvasBoard
-              cards={cards}
-              onUpdateCard={handleUpdateCard}
-              onDeleteCard={handleDeleteCard}
-              onAddCodeCard={handleAddCodeCard}
-              onOpenChatCard={handleOpenChatCard}
-              onUploadTrigger={handleUploadTrigger}
-            >
-              {(card) => {
-                if (card.type === 'code') {
-                  return (
-                    <Editor
-                      height="100%"
-                      language={language}
-                      value={code}
-                      onChange={handleCodeChange}
-                      theme="vs-dark"
-                      onMount={(editor, monaco) => {
-                        editorRef.current = editor
-                        monacoRef.current = monaco
-                        editor.onDidChangeCursorPosition(e => {
-                          socketRef.current?.emit('cursor-move', { roomId, position: e.position })
-                        })
-                      }}
-                      options={{
-                        fontSize: 14,
-                        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                        fontLigatures: true,
-                        minimap: { enabled: false },
-                        scrollBeyondLastLine: false,
-                        wordWrap: 'on',
-                        padding: { top: 12, bottom: 12 },
-                        smoothScrolling: true,
-                        cursorBlinking: 'smooth',
-                        cursorSmoothCaretAnimation: 'on',
-                        renderLineHighlight: 'line',
-                        lineNumbers: 'on',
-                        automaticLayout: true,
-                        readOnly: viewOnly && !isOwner,
-                      }}
-                    />
-                  )
-                }
-
-                if (card.type === 'chat') {
-                  return (
-                    <ChatPanel
-                      messages={chatMessages}
-                      username={username}
-                      onSend={handleSendChat}
-                      onClose={() => handleDeleteCard(card.id)}
-                      activeTab={activeTab}
-                      setActiveTab={setActiveTab}
-                      sharedFiles={sharedFiles}
-                      onUploadFile={uploadScreenshot}
-                      onDeleteFile={deleteScreenshot}
-                      typingUsers={typingUsers}
-                      p2pMessages={p2pMessages}
-                      onSendP2PMessage={sendP2PMessage}
-                      onSendP2PFile={sendP2PFile}
-                      p2pTargetUser={p2pTargetUser}
-                      setP2pTargetUser={setP2pTargetUser}
-                      p2pStatus={p2pStatus}
-                      p2pProgress={p2pProgress}
-                      p2pIncomingFile={p2pIncomingFile}
-                      users={users}
-                      onStartP2P={initWebRTCPeer}
-                      socketId={socketRef.current?.id}
-                      roomUsers={users}
-                      onTyping={handleLocalTyping}
-                      triggerUpload={triggerUpload}
-                      onResetTriggerUpload={() => setTriggerUpload(false)}
-                      isHost={isOwner}
-                      userId={user?.id}
-                      userWorkspaceRole={workspaceRole}
-                    />
-                  )
-                }
-
-                if (card.type === 'screenshot') {
-                  const file = card.file
-                  if (!file) return null
-                  return (
-                    <div className="screenshot-card-content">
-                      <div className="screenshot-card-img-container" onDoubleClick={() => setLightboxImage(file)}>
-                        <img src={file.file_url} alt={file.file_name} />
-                        <div className="screenshot-card-hover-icon">
-                          🔍 Double Click
-                        </div>
-                      </div>
-                      <div className="screenshot-card-footer">
-                        {file.caption ? (
-                          <p className="screenshot-card-caption" title={file.caption}>"{file.caption}"</p>
-                        ) : (
-                          <p className="screenshot-card-caption" style={{ opacity: 0.5 }}>No caption</p>
-                        )}
-                        <div className="screenshot-card-meta">
-                          <span>By {file.uploaderName || 'Guest'}</span>
-                          <div className="screenshot-card-actions">
-                            <a href={file.file_url} download={file.file_name} target="_blank" rel="noreferrer" title="Download">
-                              📥
-                            </a>
-                            {(user?.id === file.uploader_id || isOwner || ['owner', 'admin'].includes(workspaceRole)) && (
-                              <button className="btn-delete" onClick={() => deleteScreenshot(file.id)} title="Delete">
-                                🗑️
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                }
-
-                return null
+            <Editor
+              height="100%"
+              language={language}
+              value={code}
+              onChange={handleCodeChange}
+              theme="vs-dark"
+              onMount={(editor, monaco) => {
+                editorRef.current = editor
+                monacoRef.current = monaco
+                editor.onDidChangeCursorPosition(e => {
+                  socketRef.current?.emit('cursor-move', { roomId, position: e.position })
+                })
               }}
-            </CanvasBoard>
+              options={{
+                fontSize: 14,
+                fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                fontLigatures: true,
+                minimap: { enabled: true },
+                scrollBeyondLastLine: false,
+                wordWrap: 'on',
+                padding: { top: 16, bottom: 16 },
+                smoothScrolling: true,
+                cursorBlinking: 'smooth',
+                cursorSmoothCaretAnimation: 'on',
+                renderLineHighlight: 'line',
+                lineNumbers: 'on',
+                glyphMargin: false,
+                folding: true,
+                automaticLayout: true,
+                readOnly: viewOnly && !isOwner,
+              }}
+            />
             {/* View-only overlay (only for non-owners) */}
             {viewOnly && !isOwner && (
               <div className="view-only-overlay">
@@ -1152,6 +949,40 @@ export default function EditorPage() {
             </div>
           )}
         </div>
+
+        {/* ── Chat panel ───────────────────────────────────────────── */}
+        {chatOpen && (
+          <ChatPanel
+            messages={chatMessages}
+            username={username}
+            onSend={handleSendChat}
+            onClose={() => setChatOpen(false)}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            sharedFiles={sharedFiles}
+            onUploadFile={uploadScreenshot}
+            onDeleteFile={deleteScreenshot}
+            typingUsers={typingUsers}
+            p2pMessages={p2pMessages}
+            onSendP2PMessage={sendP2PMessage}
+            onSendP2PFile={sendP2PFile}
+            p2pTargetUser={p2pTargetUser}
+            setP2pTargetUser={setP2pTargetUser}
+            p2pStatus={p2pStatus}
+            p2pProgress={p2pProgress}
+            p2pIncomingFile={p2pIncomingFile}
+            users={users}
+            onStartP2P={initWebRTCPeer}
+            socketId={socketRef.current?.id}
+            roomUsers={users}
+            onTyping={handleLocalTyping}
+            triggerUpload={triggerUpload}
+            onResetTriggerUpload={() => setTriggerUpload(false)}
+            isHost={isOwner}
+            userId={user?.id}
+            userWorkspaceRole={workspaceRole}
+          />
+        )}
       </div>
 
       {/* ── Toast notifications ──────────────────────────────────── */}

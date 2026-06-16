@@ -1,16 +1,15 @@
 .chat-panel {
-  position: fixed;
-  top: 52px;           /* below header */
-  right: 0;
-  bottom: 0;
+  position: relative;
+  top: 0;
+  height: 100%;
   width: 340px;
   background: var(--bg-800);
   border-left: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
-  z-index: 50;
-  box-shadow: -8px 0 32px rgba(0,0,0,0.3);
+  z-index: 10;
   color: var(--text-primary);
+  flex-shrink: 0;
 }
 
 /* Header */
